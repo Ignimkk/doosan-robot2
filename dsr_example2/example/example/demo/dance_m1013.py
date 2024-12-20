@@ -4,7 +4,7 @@ import sys
 
 # for single robot
 ROBOT_ID   = "dsr01"
-ROBOT_MODEL= "m1013"
+ROBOT_MODEL= "a0509"
 
 import DR_init
 DR_init.__dsr__id   = ROBOT_ID
