@@ -30,6 +30,9 @@ class ToolChanger(Node):
             self.get_logger().info("Received 'off' command. Activating gripper_put_off.")
             self.msg_data = 'OFF'
             # self.gripper_put_off()
+        elif msg.data == "oon":
+            self.get_logger().info("Received 'oon' command. Activating gripper_put_on_execute.")
+            self.msg_data = 'OON'
         else:
             self.get_logger().warning(f"Invalid command received: {msg.data}")
 
@@ -56,9 +59,34 @@ class ToolChanger(Node):
         movel(ON_L02, vel=100, acc=1000, time=0, ref=DR_BASE, mod=DR_MV_MOD_ABS)
         movel(ON_L03, vel=60, acc=30, time=0, ref=DR_TOOL, mod=DR_MV_MOD_REL)
         movej(ON_J04, vel=60, acc=30, time=0)
-        msg2 = String()
-        msg2.data = 'close'
-        self.gripper_command_publisher.publish(msg2)
+        self.get_logger().info("gripper_put_on motions complete.")
+    
+    def gripper_put_on_execute(self):
+        try:
+            from DSR_ROBOT2 import movej, movel, set_velx, set_accx, DR_BASE, DR_TOOL, DR_MV_MOD_ABS, DR_MV_MOD_REL
+        except ImportError as e:
+            self.get_logger().error(f"Error importing DSR_ROBOT2: {e}")
+            return
+
+        # Set values
+        set_velx(100, 20)
+        set_accx(1000, 40)
+
+        ON_J01 = [103.83, -0.26, 100.17, 0.0, 80.09, 103.23]
+        ON_L02 = [-85.990, 349.210, 336.120, 104.84, 180.0, 104.23]
+        ON_L03 = [0.0, -150.0, 0.0, 0.0, 0.0, 0.0]
+        ON_J04 = [180.0, 0.0, 90.0, 0.0, 90.0, 90.0]
+
+        # Execute motions
+        self.get_logger().info("Executing gripper_put_on motions...")
+        movej(ON_J01, vel=60, acc=30, time=0, mod=DR_MV_MOD_ABS)
+        time.sleep(1)
+        movel(ON_L02, vel=100, acc=1000, time=0, ref=DR_BASE, mod=DR_MV_MOD_ABS)
+        movel(ON_L03, vel=60, acc=30, time=0, ref=DR_TOOL, mod=DR_MV_MOD_REL)
+        movej(ON_J04, vel=60, acc=30, time=0)
+        msg = String()
+        msg.data = 'close'
+        self.gripper_command_publisher.publish(msg)
         self.get_logger().info("gripper_put_on motions complete.")
 
     def gripper_put_off(self):
@@ -100,7 +128,10 @@ def main(args=None):
                 node.msg_data = 'None'  
             elif node.msg_data == 'OFF':
                 node.gripper_put_off()
-                node.msg_data = 'None'  
+                node.msg_data = 'None'
+            elif node.msg_data == 'OON':
+                node.gripper_put_on_execute()
+                node.msg_data = 'None'
     except KeyboardInterrupt:
         node.get_logger().info("Node interrupted by user.")
     finally:
