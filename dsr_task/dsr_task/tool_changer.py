@@ -17,6 +17,7 @@ class ToolChanger(Node):
     def __init__(self):
         super().__init__('tool_changer', namespace=ROBOT_ID)
         self.subscriber = self.create_subscription(String, 'gripper_change', self.gripper_callback, 10)
+        self.gripper_command_publisher = self.create_publisher(String, 'gripper_command', 10)
         self.get_logger().info("ToolChanger node initialized.")
         self.msg_data = "None"
     def gripper_callback(self, msg):
@@ -55,6 +56,9 @@ class ToolChanger(Node):
         movel(ON_L02, vel=100, acc=1000, time=0, ref=DR_BASE, mod=DR_MV_MOD_ABS)
         movel(ON_L03, vel=60, acc=30, time=0, ref=DR_TOOL, mod=DR_MV_MOD_REL)
         movej(ON_J04, vel=60, acc=30, time=0)
+        msg2 = String()
+        msg2.data = 'close'
+        self.gripper_command_publisher.publish(msg2)
         self.get_logger().info("gripper_put_on motions complete.")
 
     def gripper_put_off(self):
