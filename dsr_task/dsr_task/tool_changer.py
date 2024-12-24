@@ -16,7 +16,7 @@ DR_init.__dsr__model = ROBOT_MODEL
 class ToolChanger(Node):
     def __init__(self):
         super().__init__('tool_changer', namespace=ROBOT_ID)
-        self.subscriber = self.create_subscription(String, 'gripper_chage', self.gripper_callback, 10)
+        self.subscriber = self.create_subscription(String, 'gripper_change', self.gripper_callback, 10)
         self.get_logger().info("ToolChanger node initialized.")
         self.msg_data = "None"
     def gripper_callback(self, msg):
@@ -53,9 +53,7 @@ class ToolChanger(Node):
         movej(ON_J01, vel=60, acc=30, time=0, mod=DR_MV_MOD_ABS)
         time.sleep(1)
         movel(ON_L02, vel=100, acc=1000, time=0, ref=DR_BASE, mod=DR_MV_MOD_ABS)
-        time.sleep(1)
         movel(ON_L03, vel=60, acc=30, time=0, ref=DR_TOOL, mod=DR_MV_MOD_REL)
-        time.sleep(1)
         movej(ON_J04, vel=60, acc=30, time=0)
         self.get_logger().info("gripper_put_on motions complete.")
 

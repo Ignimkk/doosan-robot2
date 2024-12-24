@@ -61,7 +61,7 @@ _ros2_get_last_alarm             = g_node.create_client(GetLastAlarm,           
 _ros2_get_current_pose           = g_node.create_client(GetCurrentPose,         _srv_name_prefix +"system/get_current_pose")
 
 #  motion Operations
-_ros2_movej                      = g_node.create_client(MoveJoint,              _srv_name_prefix + "motion/move_joint")
+_ros2_movej                      = g_node.create_client(MoveJoint,              _srv_name_prefix +"motion/move_joint")
 _ros2_movel                      = g_node.create_client(MoveLine,               _srv_name_prefix +"motion/move_line")
 _ros2_movejx                     = g_node.create_client(MoveJointx,             _srv_name_prefix +"motion/move_jointx")
 _ros2_movec                      = g_node.create_client(MoveCircle,             _srv_name_prefix +"motion/move_circle")
