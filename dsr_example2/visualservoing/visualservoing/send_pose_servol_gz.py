@@ -39,10 +39,10 @@ class SendPoseServoLGz(Node):
 
     def check_and_process_data(self):
         if self.current_marker_id is not None and self.current_desired_pose is not None:
-            self.detected_marker_servol_pub = self.create_publisher(ServolStream, '/dsr01/servol_stream', 10)
+            self.detected_marker_servol_pub = self.create_publisher(ServolStream, '/servol_stream', 10)
  
 
-            if self.current_marker_id == 1000:
+            if self.current_marker_id == 1:
                 self.destroy_publisher(self.detected_marker_servol_pub)
                 self.get_logger().info("Failed Detecting Marker. Move to waiting Position.")
             

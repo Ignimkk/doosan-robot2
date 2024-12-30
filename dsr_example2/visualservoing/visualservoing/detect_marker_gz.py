@@ -1,5 +1,5 @@
 # 
-#  detect_marker_gz.py
+#  detect_marker.py
 #  Author: Chemin Ahn (chemx3937@gmail.com)
 #  
 #  Copyright (c) 2024 Doosan Robotics
@@ -28,17 +28,19 @@ from dsr_msgs2.msg import ServojStream
 
 class DetectMarkerGz(Node):
     def __init__(self):
-        super().__init__('detect_marker_gz')
+        super().__init__('detect_marker')
         self.br = TransformBroadcaster(self)
         self.bridge = CvBridge()
-        self.aruco_dict = cv.aruco.Dictionary_get(cv.aruco.DICT_4X4_1000)
-        self.aruo_params = cv.aruco.DetectorParameters_create()
-        calibration_file = self.get_parameter_or("calibration_file",os.path.join(get_package_share_directory('visualservoing'), 'config', 'rgbd_camera_gz.yaml'))
-
-        with open(calibration_file, "r") as file:
-            calib_data = yaml.safe_load(file)
-            self.camera_matrix = np.array(calib_data["camera_matrix"]["data"]).reshape((3, 3))
-            self.dist_coeffs = np.array(calib_data["distortion_coefficients"]["data"])
+        package_share_directory = get_package_share_directory('dsr_sensor')
+        calib_data_path = os.path.join(package_share_directory, 'config', 'MultiMatrix.npz')
+        
+        calib_data = np.load(calib_data_path)
+        self.cam_mat = calib_data["camMatrix"]
+        self.dist_coef = calib_data["distCoef"]
+        
+        self.dictionary = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_1000)
+        self.parameters = cv.aruco.DetectorParameters()
+        self.detector = cv.aruco.ArucoDetector(self.dictionary, self.parameters)
 
         self.current_marker_id = None
         self.previous_marker_id = None
@@ -68,8 +70,8 @@ class DetectMarkerGz(Node):
         self.joint_time = 0.0
 
 
-        self.image_sub = self.create_subscription(Image, "/rgbd_camera/image", self.callback, 10)
-        self.joint_sub = self.create_subscription(JointState, "/dsr01/gz/joint_states", self.joint_callback, 10)
+        self.image_sub = self.create_subscription(Image, "/camera/camera/color/image_raw", self.callback, 10)
+        self.joint_sub = self.create_subscription(JointState, "/joint_states", self.joint_callback, 10)
 
         self.marker_id_pub = self.create_publisher(Int32, '/marker/id', 10)
         self.marker_pose_pub = self.create_publisher(Float32MultiArray, '/marker/pose', 10)
@@ -90,7 +92,7 @@ class DetectMarkerGz(Node):
             self.get_logger().error("CvBridgeError: {0}".format(e))
             return
         gray = cv.cvtColor(cv_image, cv.COLOR_BGR2GRAY)
-        ret = cv.aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruo_params)
+        ret = self.detector.detectMarkers(gray)
         corners, ids = ret[0], ret[1]
 
        
@@ -101,8 +103,8 @@ class DetectMarkerGz(Node):
 
             marker_index = np.where(ids == self.current_marker_id)[0][0]
 
-            ret = cv.aruco.estimatePoseSingleMarkers(
-                [corners[marker_index]], self.marker_size, self.camera_matrix, self.dist_coeffs
+            ret = cv.solvePnP(
+                [corners[marker_index]], self.marker_size, self.cam_mat, self.dist_coef
             )
             (rvec, tvec) = (ret[0], ret[1])
 
@@ -176,7 +178,7 @@ class DetectMarkerGz(Node):
             if time_since_last_detected > 2:
                 self.current_marker_id = 1000
 
-                self.joint_pose_pub = self.create_publisher(ServojStream, '/dsr01/servoj_stream', 10)
+                self.joint_pose_pub = self.create_publisher(ServojStream, '/servoj_stream', 10)
 
                 if self.current_joint != self.joint_pose:
                     self.joint_msg = ServojStream()
