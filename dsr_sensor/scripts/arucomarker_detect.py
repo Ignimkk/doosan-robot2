@@ -83,9 +83,9 @@ class ArucoDetector(Node):
                         pose_msg = PoseStamped()
                         pose_msg.header.frame_id = "camera_frame"
                         pose_msg.header.stamp = self.get_clock().now().to_msg()
-                        pose_msg.pose.position.x = tVec[0][0] / 1000.0  # mm -> m
-                        pose_msg.pose.position.y = tVec[1][0] / 1000.0
-                        pose_msg.pose.position.z = tVec[2][0] / 1000.0
+                        pose_msg.pose.position.x = tVec[0][0]  # mm -> m
+                        pose_msg.pose.position.y = tVec[1][0]
+                        pose_msg.pose.position.z = tVec[2][0]
                         pose_msg.pose.orientation.x = rVec[0][0]
                         pose_msg.pose.orientation.y = rVec[1][0]
                         pose_msg.pose.orientation.z = rVec[2][0]
@@ -94,6 +94,24 @@ class ArucoDetector(Node):
                         # 퍼블리시
                         self.pose_publisher.publish(pose_msg)
                         self.get_logger().info(f"Published marker pose: {pose_msg}")
+            
+                    # 바운딩 박스와 ID 추가
+                    marker_corner_int = marker_corner.astype(int)
+                    cv.polylines(frame, [marker_corner_int], True, (0, 255, 0), 2)
+                    center = tuple(marker_corner_int.mean(axis=1).astype(int).flatten())
+                    cv.putText(frame, f"ID: {marker_id}", center, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    
+                     # 각 코너의 좌표 표시
+                    for idx, corner in enumerate(marker_corner_int[0]):
+                        coord_text = f"{idx}:({corner[0]},{corner[1]})"
+                        cv.putText(frame, coord_text, tuple(corner), cv.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+                        
+                    # 3D 포즈 정보 추가
+                    pose_text = f"Pos: ({pose_msg.pose.position.x:.2f}, {pose_msg.pose.position.y:.2f}, {pose_msg.pose.position.z:.2f})"
+                    orientation_text = f"Ori: ({pose_msg.pose.orientation.x:.2f}, {pose_msg.pose.orientation.y:.2f}, {pose_msg.pose.orientation.z:.2f})"
+                    cv.putText(frame, pose_text, (center[0], center[1] + 20), cv.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+                    cv.putText(frame, orientation_text, (center[0], center[1] + 40), cv.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+                            
             # 결과 이미지 시각화
             cv.imshow("Aruco Detection", frame)
             cv.waitKey(1)
