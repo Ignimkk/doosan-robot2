@@ -72,7 +72,7 @@ dsr_moveit_controller:
   ros__parameters:
     command_interfaces:
       - position
-      - velocity
+      - velocity # 최근 커밋된거
     state_interfaces:
       - position
       - velocity
