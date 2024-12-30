@@ -26,6 +26,8 @@ setup(
             'image_capture = dsr_task.image_capture:main',
             'homming = dsr_task.homming:main',
             'gripper_control = dsr_task.gripper_control:main',
+            'move_robot = dsr_task.move_robot:main',
+            'trans = dsr_task.trans:main',
 
         ],
     },

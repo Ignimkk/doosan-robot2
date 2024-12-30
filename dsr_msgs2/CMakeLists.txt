@@ -177,6 +177,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/realtime/StopRtControl.srv"
   "srv/realtime/WriteDataRt.srv"
 
+  "action/DsrTask.action"
   DEPENDENCIES builtin_interfaces std_msgs  
 )
 
