@@ -7,6 +7,7 @@ from cv_bridge import CvBridge
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from sensor_msgs.msg import Image
+from std_msgs.msg import Bool
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import PoseStamped
 
@@ -37,6 +38,7 @@ class ArucoDetector(Node):
             raise
         
         self.pose_publisher = self.create_publisher(PoseStamped, '/aruco_marker_pose', QoSProfile(depth=10))
+        self.detect_sign_publisher = self.create_publisher(Bool, 'aruco_detect_sign', QoSProfile(depth=10))
 
         # 이미지 토픽 구독
         qos_profile = QoSProfile(depth=10)
@@ -46,6 +48,10 @@ class ArucoDetector(Node):
             self.image_callback, 
             qos_profile
         )
+
+        # 마커 상태 관리
+        self.marker_detection_count = 0
+        self.last_detected_id = None
 
     def get_marker_corners_3d(self):
         half_size = self.marker_size / 2.0
@@ -77,8 +83,15 @@ class ArucoDetector(Node):
                         self.cam_mat, 
                         self.dist_coef
                     )
-
+                    
                     if ret:
+                        # 동일 마커 검출 횟수 증가 또는 초기화
+                        if self.last_detected_id == marker_id:
+                            self.marker_detection_count += 1
+                        else:
+                            self.marker_detection_count = 1
+                            self.last_detected_id = marker_id
+                        
                         # PoseStamped 메시지 생성
                         pose_msg = PoseStamped()
                         pose_msg.header.frame_id = "camera_frame"
@@ -90,12 +103,21 @@ class ArucoDetector(Node):
                         pose_msg.pose.orientation.y = rVec[1][0]
                         pose_msg.pose.orientation.z = rVec[2][0]
                         pose_msg.pose.orientation.w = 1.0  # Rotation as needed
-
-                        # 퍼블리시
-                        self.pose_publisher.publish(pose_msg)
-                        self.get_logger().info(f"Published marker pose: {pose_msg}")
-            
-                    # 바운딩 박스와 ID 추가
+                        
+                        # 30 프레임 이상 동일 마커 감지 시 퍼블리시
+                        if self.marker_detection_count >= 30:
+                            self.detect_sign_publisher.publish(Bool(data=True))
+                            self.pose_publisher.publish(pose_msg)
+                            # x, y, z와 오리엔테이션 x, y, z만 출력
+                            self.get_logger().info(
+                                f"Marker ID {marker_id}: Position (x={pose_msg.pose.position.x:.2f}, "
+                                f"y={pose_msg.pose.position.y:.2f}, z={pose_msg.pose.position.z:.2f}), "
+                                f"Orientation (x={pose_msg.pose.orientation.x:.2f}, "
+                                f"y={pose_msg.pose.orientation.y:.2f}, z={pose_msg.pose.orientation.z:.2f})"
+                            )
+                            self.marker_detection_count = 1
+                    
+                    # 감지된 마커 표시
                     marker_corner_int = marker_corner.astype(int)
                     cv.polylines(frame, [marker_corner_int], True, (0, 255, 0), 2)
                     center = tuple(marker_corner_int.mean(axis=1).astype(int).flatten())
@@ -111,8 +133,8 @@ class ArucoDetector(Node):
                     orientation_text = f"Ori: ({pose_msg.pose.orientation.x:.2f}, {pose_msg.pose.orientation.y:.2f}, {pose_msg.pose.orientation.z:.2f})"
                     cv.putText(frame, pose_text, (center[0], center[1] + 20), cv.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
                     cv.putText(frame, orientation_text, (center[0], center[1] + 40), cv.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
-                            
-            # 결과 이미지 시각화
+            
+            # 이미지 표시                
             cv.imshow("Aruco Detection", frame)
             cv.waitKey(1)
 

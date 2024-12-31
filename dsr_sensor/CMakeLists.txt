@@ -14,13 +14,14 @@ find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(tf2_ros REQUIRED)
+find_package(dsr_msgs2 REQUIRED)
 
 # Include directories
 include_directories(include ${OpenCV_INCLUDE_DIRS})
 
 # Install Python scripts
 install(
-  PROGRAMS scripts/arucomarker_detect.py
+  PROGRAMS scripts/arucomarker_detect.py scripts/trans_link6_to_cam.py scripts/trans_cam_to_base.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
