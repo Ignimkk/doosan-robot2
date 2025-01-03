@@ -26,7 +26,6 @@ from launch.actions import OpaqueFunction
 from moveit_configs_utils import MoveItConfigsBuilder
 
 
-
 def print_launch_configuration_value(context, *args, **kwargs):
     # LaunchConfiguration 값을 평가합니다.
     gz_value = LaunchConfiguration('gz').perform(context)
@@ -102,22 +101,24 @@ def generate_launch_description():
         
         output="both",
     )
-
     robot_state_pub_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='robot_state_publisher',
         namespace=LaunchConfiguration('name'),
         output='both',
-        # remappings=[
-        #     (
-        #         "/joint_states",
-        #         "/dsr/joint_states",
-        #     ),
-        # ],
         parameters=[{
-        'robot_description': Command(['xacro', ' ', xacro_path, '/', LaunchConfiguration('model'), '.urdf.xacro color:=', LaunchConfiguration('color')])           
-    }])
+            'robot_description': Command([
+                'xacro ',
+                xacro_path, '/',
+                LaunchConfiguration('model'),
+                '.urdf.xacro ',
+                'color:=', LaunchConfiguration('color'), ' ',
+                'use_nominal_extrinsics:=true ',  # 추가된 부분
+                'add_plug:=true'                 # 추가된 부분
+            ])
+        }]
+    )
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",

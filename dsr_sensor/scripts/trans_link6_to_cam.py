@@ -64,7 +64,7 @@ class CameraOffsetNode(Node):
                 # Trans 요청 메시지 생성
                 trans_request = Trans.Request()
                 trans_request.pos = end_effector_pos
-                trans_request.delta = [-80.0, 30.0, 25.0, 0.0, 0.0, -1.57]  # 카메라 옵셋
+                trans_request.delta = [-80.0, 0.0, 25.0, 0.0, 0.0, 1.57]  # 카메라 옵셋
                 trans_request.ref = 1  # DR_TOOL
                 trans_request.ref_out = 0  # DR_BASE
 

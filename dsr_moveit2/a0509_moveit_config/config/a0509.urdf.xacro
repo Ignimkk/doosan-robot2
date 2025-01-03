@@ -1,13 +1,24 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="a0509">
+    <!-- Arguments -->
     <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+    <xacro:arg name="use_nominal_extrinsics" default="true" />
+    <xacro:arg name="add_plug" default="true" />
 
-    <!-- Import panda urdf file -->
+    <!-- Include base robot model -->
     <xacro:include filename="$(find dsr_description2)/urdf/a0509.urdf" />
 
-    <!-- Import a0509 ros2_control description -->
-    
+    <!-- Include MoveIt-specific ros2_control -->
     <xacro:include filename="dsr.ros2_control.xacro" />
-
     <xacro:dsr_moveit_ros2_control name="DSRFakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+
+    <!-- Include camera -->
+    <xacro:include filename="$(find dsr_description2)/xacro/_materials.urdf.xacro" />
+    <xacro:include filename="$(find dsr_description2)/xacro/_usb_plug.urdf.xacro" />
+    <xacro:include filename="$(find dsr_description2)/xacro/_d435i.urdf.xacro" />
+
+    <!-- Add sensor_d435 macro -->
+    <xacro:sensor_d435i parent="link_6" name="camera" use_nominal_extrinsics="true">
+        <origin xyz="-0.08 0.0 0.0" rpy="0 -1.57 0"/>
+    </xacro:sensor_d435i>
 </robot>

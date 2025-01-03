@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Float32MultiArray
 
 class CameraToBaseTransformer(Node):
     def __init__(self):
@@ -19,7 +20,7 @@ class CameraToBaseTransformer(Node):
 
         # 아루코 마커 위치를 구독
         self.aruco_pose_sub = self.create_subscription(
-            PoseStamped,
+            Float32MultiArray,
             'aruco_marker_pose',
             self.aruco_pose_callback,
             10
@@ -47,14 +48,16 @@ class CameraToBaseTransformer(Node):
         if self.camera_position is None or self.camera_orientation is None:
             self.get_logger().warning("Camera pose is not yet available.")
             return
-
-        aruco_in_base = self.convert_to_base_frame(self.camera_position, self.camera_orientation, msg)
+        
+        # Float32MultiArray에서 데이터 추출
+        aruco_position = np.array(msg.data[:3]) / 1000.0  # mm -> m
+        aruco_in_base = self.convert_to_base_frame(self.camera_position, self.camera_orientation, aruco_position)
         self.get_logger().info(f"Aruco Marker Position in Base Frame (mm): {aruco_in_base}")
         self.camera_position = None
         self.camera_orientation = None
 
     @staticmethod
-    def convert_to_base_frame(camera_position, camera_orientation, aruco_pose):
+    def convert_to_base_frame(camera_position, camera_orientation, aruco_position):
         tx, ty, tz = np.array(camera_position) / 1000.0  # mm -> m
         roll, pitch, yaw = np.radians(camera_orientation[:3])  # degrees -> radians
 
@@ -76,16 +79,9 @@ class CameraToBaseTransformer(Node):
         T_camera_to_base[:3, :3] = R_camera
         T_camera_to_base[:3, 3] = [tx, ty, tz]
 
-        # 2. 아루코 마커 좌표를 동차 좌표계로 변환
-        aruco_position = np.array([aruco_pose.pose.position.x / 1000.0,
-                                    aruco_pose.pose.position.y / 1000.0,
-                                    aruco_pose.pose.position.z / 1000.0,
-                                    1.0])
+        aruco_position_homogeneous = np.append(aruco_position, 1.0)  # Add homogeneous coordinate
+        aruco_position_in_base = T_camera_to_base @ aruco_position_homogeneous
 
-        # 3. 변환 적용
-        aruco_position_in_base = T_camera_to_base @ aruco_position
-
-        # 4. 결과 반환
         return aruco_position_in_base[:3] * 1000  # m -> mm
 
 def main(args=None):

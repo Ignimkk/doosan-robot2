@@ -21,7 +21,7 @@ include_directories(include ${OpenCV_INCLUDE_DIRS})
 
 # Install Python scripts
 install(
-  PROGRAMS scripts/arucomarker_detect.py scripts/trans_link6_to_cam.py scripts/trans_cam_to_base.py
+  PROGRAMS scripts/arucomarker_detect.py scripts/trans_link6_to_cam.py scripts/trans_cam_to_base.py scripts/camera_to_base.py scripts/test_marder.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
